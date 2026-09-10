@@ -4,7 +4,14 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 
 const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const connectionString = process.env.DATABASE_URL;
+
+const pool = new Pool({
+  connectionString,
+  ssl: connectionString?.includes("sslmode=require") || process.env.NODE_ENV === "production"
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 const adapter = new PrismaPg(pool);
 
 // 🔒 Use a global variable to prevent multiple Prisma instances in dev/hot reload

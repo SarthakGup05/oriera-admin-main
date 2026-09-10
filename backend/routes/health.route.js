@@ -30,14 +30,16 @@ function getDiskUsage() {
   }
 }
 
+// 🟢 Lightweight ping endpoint (ideal for keep-alive cron jobs)
+router.get("/", (req, res) => {
+  res.status(200).json({ status: "ok", message: "Server is active", timestamp: new Date().toISOString() });
+});
+
 // 🧩 Main health route
 router.get("/full", async (req, res) => {
   try {
-    const [threads, maxConn, timeout] = await Promise.all([
-      db.$queryRaw`SHOW STATUS LIKE 'Threads_connected';`,
-      db.$queryRaw`SHOW VARIABLES LIKE 'max_connections';`,
-      db.$queryRaw`SHOW VARIABLES LIKE 'wait_timeout';`,
-    ]);
+    // Database query check (PostgreSQL compatible)
+    await db.$queryRaw`SELECT 1`;
 
     const cloudinaryStatus = await checkCloudinary();
 
@@ -53,9 +55,7 @@ router.get("/full", async (req, res) => {
       message: "Full system, database, and API health check successful",
       database: {
         prisma: "connected",
-        threads_connected: Number(threads[0]?.Value || 0),
-        max_connections: Number(maxConn[0]?.Value || 0),
-        wait_timeout: `${timeout[0]?.Value}s`,
+        provider: "postgresql",
       },
       cloudinary: cloudinaryStatus,
       server: {
