@@ -1,0 +1,251 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  imageUrl  String?
+  altText   String?
+  createdAt DateTime @default(now())
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  title       String
+  price       String
+  description String
+  inclusions  Json
+  serviceId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  slug        String   @unique
+  title       String   // Main display title (e.g., "Wedding Photography")
+  subtitle    String   // Tagline (e.g., "Capturing Love Stories")
+  description String   @db.Text // Longer description for the service
+  
+  // Images
+  coverImage  String   // Main hero/cover image URL
+  mainImage   String   // Primary service image (right side of layout)
+  
+  // Service Details
+  features    Json // Changed from String[]
+  duration    String?  // Session duration (e.g., "8+ hours")
+
+  // SEO & Meta
+  metaTitle       String?
+  metaDescription String?
+  
+  // Admin/Status
+  isActive    Boolean  @default(true)
+  featured    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  
+  // Relationships
+  
+  galleryImages   Gallery[] // One service can have multiple gallery images
+  
+  @@map("services")
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model CategoryImage {
+  id        Int     @id @default(autoincrement())
+  imageUrl  String
+
+  serviceId Int
+}
+
+model Gallery {
+  id          Int      @id @default(autoincrement())
+  src         String   // Full resolution image URL (Cloudinary)
+  thumb       String   // Thumbnail image URL (Cloudinary) 
+  alt         String   // Alt text for accessibility
+  title       String   // Image title
+  category    String   // Category (wedding, baby, maternity, fashion, etc.)
+  description String?  // Optional description
+  date        DateTime @default(now()) // Upload/creation date
+
+  featured    Boolean  @default(false) // Featured statusg
+  isActive    Boolean  @default(true) // Active/inactive status
+  sortOrder   Int      @default(0) // Custom sorting order
+  
+  // SEO fields
+  metaTitle       String?
+  metaDescription String?
+  
+  // Cloudinary specific fields
+  publicId        String? // Cloudinary public_id for deletion
+  cloudinaryUrl   String? // Full Cloudinary URL with transformations
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Optional: Link to service if this image belongs to a specific service
+  serviceId Int?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  
+  @@map("gallery")
+}
+
+
+model Testimonial {
+  id          Int      @id @default(autoincrement())
+  name        String
+  service     String
+  image       String?  // Optional - profile image
+  rating      Int      // 1-5 rating
+  text        String   @db.Text // Review text content
+  location    String
+  email       String   // Contact email
+  phone       String?  // Optional phone number
+  type        String   @default("text") // "text" or "video"
+  videoUrl    String?  // Video file URL/path
+  videoPoster String?  // Video poster/thumbnail image
+  isActive    Boolean  @default(false) // For admin approval
+  featured    Boolean  @default(false) // Featured testimonials
+  sortOrder   Int      @default(0) // For custom ordering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, featured])
+  @@index([type, isActive])
+  @@index([service, isActive])
+}
+
+
+model PortfolioItem {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String
+  image     String
+  createdAt DateTime @default(now())
+}
+
+model Story {
+  id              Int      @id @default(autoincrement())
+  title           String
+  category        String
+  date            String
+  location        String
+  mainImage       String
+  story           String
+  author          String
+  featured        Boolean  @default(false)
+  status          String   @default("draft") // or enum
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isActive        Boolean  @default(true)
+  metaTitle       String?
+  metaDescription String?
+  publicId        String?
+}
+
+
+model Contact {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String
+  phone       String
+  serviceType String
+  message     String
+  status      Status   @default(NEW)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Status {
+  NEW
+  PENDING
+  CONVERTED
+  REJECTED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+
+model Slider {
+  id          String    @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String?
+  
+  // Media
+  type        MediaType @default(IMAGE)
+  mediaUrl    String
+  mobileMediaUrl String?   // For mobile display
+  posterUrl   String?   // For videos
+  
+  // Settings
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("sliders")
+}
+
+model Blog {
+  id              Int       @id @default(autoincrement())
+  title           String
+  slug            String    @unique
+  excerpt         String?   @db.Text
+  content         String    @db.Text
+  coverImage      String?
+  publicId        String?
+  category        String    @default("General")
+  tags            String[]  @default([])
+  author          String    @default("Admin")
+  authorImage     String?
+  readTime        String?
+  featured        Boolean   @default(false)
+  status          String    @default("published")
+  isActive        Boolean   @default(true)
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  views           Int       @default(0)
+  likes           Int       @default(0)
+  publishedAt     DateTime? @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status, isActive])
+  @@index([category])
+  @@index([slug])
+  @@map("blogs")
+}
+
+
+
