@@ -27,10 +27,40 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://oriera-admin.vercel.app", "https://jaya-photography-next.vercel.app", "https://jayaphotography.vercel.app", "https://jayaphotography.in", "https://www.jayaphotography.in", "http://localhost:3000", "https://admin.jayaphotography.in"], // frontend URLs
-    credentials: true, // if you use cookies
-    allowedHeaders: ["Content-Type", "Authorization"], // ✅ allow Authorization
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // optional, but safe
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or SSR server-to-server calls)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://oriera-admin.vercel.app",
+        "https://jaya-photography-next.vercel.app",
+        "https://jayaphotography.vercel.app",
+        "https://jayaphotography.in",
+        "https://www.jayaphotography.in",
+        "https://admin.jayaphotography.in",
+      ];
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".jayaphotography.in") ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:");
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
 
